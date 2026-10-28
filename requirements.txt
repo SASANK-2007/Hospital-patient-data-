@@ -1,0 +1,12 @@
+# Hospital Patient Data Analysis System — dependencies
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.5
+Flask>=3.0
+gunicorn>=22.0; platform_system != "Windows"
+
+# Optional web dashboard
+streamlit>=1.30
+
+# Optional: only required when using HOSPITAL_DB_BACKEND=mysql
+# pymysql>=1.1

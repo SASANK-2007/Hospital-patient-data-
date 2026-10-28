@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block auth %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="brand-icon">&#10010;</span>
+      <span class="brand-text">Hospital<span class="brand-accent">Analytics</span></span>
+    </div>
+    <h2 class="login-title">Sign in</h2>
+    <p class="login-sub">Restricted access — operational statistics only.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} py-2">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="admin" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-success w-100">Sign in</button>
+    </form>
+
+    <div class="login-hint">Demo credentials: <strong>admin / admin123</strong></div>
+    <div class="disclaimer-banner mt-3">{{ disclaimer }}</div>
+  </div>
+</div>
+{% endblock %}

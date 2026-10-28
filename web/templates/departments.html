@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+{% block page_title %}Department Management{% endblock %}
+{% block content %}
+
+<div class="panel mb-4">
+  <div class="panel-head">
+    <h3>Add Department</h3>
+    <span class="panel-tag">Reference data</span>
+  </div>
+  <form class="row g-2 align-items-end" method="post" action="{{ url_for('department_add') }}">
+    <div class="col-md-6">
+      <label class="form-label">Department Name</label>
+      <input type="text" name="name" class="form-control" placeholder="e.g. Cardiology" required>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-success w-100">Add</button>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h3>Departments <span class="count-badge">{{ rows|length }}</span></h3>
+    <span class="panel-tag">Used when recording visits</span>
+  </div>
+  <div class="table-scroll">
+    <table class="table table-hover align-middle">
+      <thead class="table-success">
+        <tr>
+          <th>#</th><th>Name</th><th>Visits</th><th style="width:38%">Rename</th><th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.department_id }}</td>
+          <td><strong>{{ r.department_name }}</strong></td>
+          <td>{{ r.visit_count }}</td>
+          <td>
+            <form method="post" action="{{ url_for('department_update', did=r.department_id) }}" class="d-flex gap-2">
+              <input type="text" name="name" class="form-control form-control-sm" placeholder="New name" required>
+              <button class="btn btn-sm btn-outline-success">Save</button>
+            </form>
+          </td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('department_delete', did=r.department_id) }}"
+                  onsubmit="return confirm('Delete this department?');">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No departments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

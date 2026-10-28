@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Visit Records{% endblock %}
+{% block page_title %}Visit Records{% endblock %}
+{% block content %}
+
+<div class="panel mb-4">
+  <div class="panel-head">
+    <h3>Record a Visit</h3>
+    <span class="panel-tag">Every visit links to a valid patient &amp; department</span>
+  </div>
+  <form class="row g-2 align-items-end" method="post" action="{{ url_for('visit_add') }}">
+    <div class="col-md-2">
+      <label class="form-label">Patient ID</label>
+      <input type="number" name="patient_id" class="form-control" min="1" placeholder="e.g. 1" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Department</label>
+      <select name="department_id" class="form-select" required>
+        {% for d in dept_options %}
+        <option value="{{ d.department_id }}">{{ d.department_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Visit Date</label>
+      <input type="date" name="visit_date" class="form-control" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Visit Type</label>
+      <select name="visit_type" class="form-select" required>
+        {% for t in visit_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-success w-100">Record Visit</button>
+    </div>
+  </form>
+</div>
+
+<div class="panel mb-4">
+  <div class="panel-head">
+    <h3>Filter Visits</h3>
+    <span class="panel-tag">Showing {{ total_matching }} matching record(s) (max 500 listed)</span>
+  </div>
+  <form class="row g-2 align-items-end" method="get" action="{{ url_for('visits') }}">
+    <div class="col-md-3">
+      <label class="form-label">Department</label>
+      <select name="department" class="form-select">
+        <option value="">All departments</option>
+        {% for d in dept_options %}
+        <option value="{{ d.department_id }}" {% if filters.department == d.department_id|string %}selected{% endif %}>
+          {{ d.department_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Visit Type</label>
+      <select name="visit_type" class="form-select">
+        <option value="">All types</option>
+        {% for t in visit_types %}
+        <option value="{{ t }}" {% if filters.visit_type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">From</label>
+      <input type="date" name="date_from" class="form-control" value="{{ filters.date_from }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">To</label>
+      <input type="date" name="date_to" class="form-control" value="{{ filters.date_to }}">
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button class="btn btn-success">Apply</button>
+      <a href="{{ url_for('visits') }}" class="btn btn-outline-secondary">Reset</a>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h3>Recorded Visits</h3>
+    <span class="panel-tag">Restricted — authorized users only</span>
+  </div>
+  <div class="table-scroll">
+    <table class="table table-hover align-middle">
+      <thead class="table-success">
+        <tr>
+          <th>Visit #</th><th>Patient</th><th>Department</th><th>Date</th>
+          <th>Type</th><th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>V{{ '%05d' | format(r.visit_id) }}</td>
+          <td>P{{ '%04d' | format(r.patient_id) }}</td>
+          <td><span class="pill pill-green">{{ r.department_name }}</span></td>
+          <td>{{ r.visit_date }}</td>
+          <td>{{ r.visit_type }}</td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('visit_delete', vid=r.visit_id) }}"
+                  onsubmit="return confirm('Delete this visit record?');">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No visits match the current filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

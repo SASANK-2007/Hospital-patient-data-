@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<!-- KPI cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="kpi-card kpi-green">
+      <div class="kpi-label">Total Visits</div>
+      <div class="kpi-value">{{ '{:,}'.format(kpi.total_visits) }}</div>
+      <div class="kpi-sub">All recorded visits</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card kpi-teal">
+      <div class="kpi-label">Today's Visits</div>
+      <div class="kpi-value">{{ kpi.today_visits }}</div>
+      <div class="kpi-sub">Recorded today</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card kpi-lime">
+      <div class="kpi-label">This Month</div>
+      <div class="kpi-value">{{ '{:,}'.format(kpi.month_visits) }}</div>
+      <div class="kpi-sub">Current calendar month</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="kpi-card kpi-dark">
+      <div class="kpi-label">Busiest Department</div>
+      <div class="kpi-value kpi-value-sm">{{ kpi.busiest }}</div>
+      <div class="kpi-sub">{{ kpi.busiest_count }} visits</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Visits by Department</h3>
+        <span class="panel-tag">Operational workload</span>
+      </div>
+      <div class="chart-box"><canvas id="deptChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Age-Band Distribution</h3>
+        <span class="panel-tag">Non-identifying</span>
+      </div>
+      <div class="chart-box"><canvas id="ageChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Monthly Visit Trends</h3>
+        <span class="panel-tag">Visit trend</span>
+      </div>
+      <div class="chart-box"><canvas id="monthChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Visits by Visit Type</h3>
+        <span class="panel-tag">Aggregate</span>
+      </div>
+      <div class="chart-box"><canvas id="typeChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary strip -->
+<div class="panel mb-4">
+  <div class="panel-head"><h3>Summary Statistics</h3><span class="panel-tag">NumPy</span></div>
+  <div class="stats-strip">
+    <div class="stat"><span class="stat-label">Total Visits</span><span class="stat-value">{{ '{:,}'.format(agg.stats.total_visits) }}</span></div>
+    <div class="stat"><span class="stat-label">Days Active</span><span class="stat-value">{{ agg.stats.days_active }}</span></div>
+    <div class="stat"><span class="stat-label">Mean / Day</span><span class="stat-value">{{ '%.1f' | format(agg.stats.mean_visits) }}</span></div>
+    <div class="stat"><span class="stat-label">Min / Day</span><span class="stat-value">{{ agg.stats.min_visits }}</span></div>
+    <div class="stat"><span class="stat-label">Max / Day</span><span class="stat-value">{{ agg.stats.max_visits }}</span></div>
+    <div class="stat"><span class="stat-label">Peak Day</span><span class="stat-value">{{ agg.peak.date if agg.peak else '—' }} ({{ agg.peak.visit_count if agg.peak else 0 }})</span></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const GREENS = ['#2e7d32', '#43a047', '#66bb6a', '#81c784', '#a5d6a7', '#c8e6c9', '#1b5e20', '#388e3c', '#26a69a', '#00897b'];
+const data = {{ chart | tojson }};
+
+function barChart(id, labels, values, color) {
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Visits',
+        data: values,
+        backgroundColor: color || 'rgba(46, 125, 50, 0.75)',
+        borderColor: '#2e7d32',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: '#5d6d5e' }, grid: { color: 'rgba(0,0,0,0.06)' } },
+        x: { ticks: { color: '#5d6d5e', maxRotation: 45, minRotation: 0 }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+barChart('deptChart', data.dept_labels, data.dept_values);
+barChart('monthChart', data.month_labels, data.month_values, 'rgba(67, 160, 71, 0.85)');
+barChart('typeChart', data.vtype_labels, data.vtype_values, 'rgba(0, 137, 123, 0.8)');
+
+new Chart(document.getElementById('ageChart'), {
+  type: 'doughnut',
+  data: {
+    labels: data.age_labels,
+    datasets: [{
+      data: data.age_values,
+      backgroundColor: GREENS,
+      borderColor: '#ffffff',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { color: '#3d4d3e', boxWidth: 14 } }
+    }
+  }
+});
+</script>
+{% endblock %}

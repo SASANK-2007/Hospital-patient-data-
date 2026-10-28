@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Patients{% endblock %}
+{% block page_title %}Patient Management{% endblock %}
+{% block content %}
+
+<div class="panel mb-4">
+  <div class="panel-head">
+    <h3>Add Synthetic Patient</h3>
+    <span class="panel-tag">De-identified — no names or contact details</span>
+  </div>
+  <form class="row g-2 align-items-end" method="post" action="{{ url_for('patient_add') }}">
+    <div class="col-md-4">
+      <label class="form-label">Age Band</label>
+      <select name="age_band" class="form-select" required>
+        {% for b in age_bands %}<option value="{{ b }}">{{ b }} years</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Gender (optional)</label>
+      <select name="gender" class="form-select">
+        {% for g in genders %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-success w-100">Add Patient</button>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h3>Patient Records <span class="count-badge">{{ rows|length }}</span></h3>
+    <span class="panel-tag">Restricted — authorized users only</span>
+  </div>
+  <div class="table-scroll">
+    <table class="table table-hover align-middle">
+      <thead class="table-success">
+        <tr>
+          <th>#</th><th>Age Band</th><th>Gender</th><th>Visits</th><th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>P{{ '%04d' | format(r.patient_id) }}</td>
+          <td><span class="pill">{{ r.age_band }}</span></td>
+          <td>{{ r.gender_optional or '—' }}</td>
+          <td>{{ r.visit_count }}</td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('patient_delete', pid=r.patient_id) }}"
+                  onsubmit="return confirm('Delete this synthetic patient and their visits?');">
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No patient records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

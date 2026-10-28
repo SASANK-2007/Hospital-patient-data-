@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports &amp; Analysis{% endblock %}
+{% block content %}
+
+<div class="panel mb-4">
+  <div class="panel-head">
+    <h3>Date Range Filter</h3>
+    <span class="panel-tag">Aggregates only</span>
+  </div>
+  <form class="row g-2 align-items-end" method="get" action="{{ url_for('reports') }}">
+    <div class="col-md-3">
+      <label class="form-label">From</label>
+      <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">To</label>
+      <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button class="btn btn-success">Apply Filter</button>
+      <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary">Reset</a>
+    </div>
+    <div class="col-md-3 text-end">
+      <span class="text-muted small">Period: {{ date_from or 'start' }} → {{ date_to or 'today' }}</span>
+    </div>
+  </form>
+</div>
+
+<!-- KPI strip -->
+<div class="row g-3 mb-4">
+  <div class="col-md-2"><div class="kpi-card kpi-green compact">
+    <div class="kpi-label">Total Visits</div><div class="kpi-value">{{ '{:,}'.format(stats.total_visits) }}</div></div></div>
+  <div class="col-md-2"><div class="kpi-card kpi-teal compact">
+    <div class="kpi-label">Days Active</div><div class="kpi-value">{{ stats.days_active }}</div></div></div>
+  <div class="col-md-2"><div class="kpi-card kpi-lime compact">
+    <div class="kpi-label">Mean / Day</div><div class="kpi-value">{{ '%.1f' | format(stats.mean_visits) }}</div></div></div>
+  <div class="col-md-2"><div class="kpi-card kpi-dark compact">
+    <div class="kpi-label">Min / Day</div><div class="kpi-value">{{ stats.min_visits }}</div></div></div>
+  <div class="col-md-2"><div class="kpi-card kpi-green compact">
+    <div class="kpi-label">Max / Day</div><div class="kpi-value">{{ stats.max_visits }}</div></div></div>
+  <div class="col-md-2"><div class="kpi-card kpi-teal compact">
+    <div class="kpi-label">Peak Day</div><div class="kpi-value kpi-value-sm">{{ agg.peak.date if agg.peak else '—' }}</div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-head"><h3>Department Workload</h3>
+        <a class="btn btn-sm btn-outline-success"
+           href="{{ url_for('export_csv', name='department_workload', date_from=date_from, date_to=date_to) }}">Download CSV</a>
+      </div>
+      <div class="chart-box"><canvas id="deptChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel-head"><h3>Age-Band Summary</h3>
+        <a class="btn btn-sm btn-outline-success"
+           href="{{ url_for('export_csv', name='age_band', date_from=date_from, date_to=date_to) }}">Download CSV</a>
+      </div>
+      <div class="chart-box"><canvas id="ageChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-head"><h3>Daily Visit Trend</h3>
+        <a class="btn btn-sm btn-outline-success"
+           href="{{ url_for('export_csv', name='daily_visits', date_from=date_from, date_to=date_to) }}">Download CSV</a>
+      </div>
+      <div class="chart-box"><canvas id="dailyChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel-head"><h3>Monthly Visit Trend</h3>
+        <a class="btn btn-sm btn-outline-success"
+           href="{{ url_for('export_csv', name='monthly_visits', date_from=date_from, date_to=date_to) }}">Download CSV</a>
+      </div>
+      <div class="chart-box"><canvas id="monthChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Workload table -->
+<div class="panel mb-4">
+  <div class="panel-head"><h3>Department-wise Workload Report</h3><span class="panel-tag">Aggregate</span></div>
+  <div class="table-scroll">
+    <table class="table table-hover align-middle">
+      <thead class="table-success">
+        <tr><th>#</th><th>Department</th><th>Visits</th><th>Unique Patients</th><th>Share</th></tr>
+      </thead>
+      <tbody>
+        {% for r in agg.dept %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td><strong>{{ r.department_name }}</strong></td>
+          <td>{{ '{:,}'.format(r.visit_count) }}</td>
+          <td>{{ '{:,}'.format(r.unique_patients) }}</td>
+          <td>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-success" style="width: {{ r.share }}%"></div>
+            </div>
+            <small class="text-muted">{{ r.share }}%</small>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Age band table -->
+<div class="panel mb-4">
+  <div class="panel-head"><h3>Age-Band Summary (Non-Identifying)</h3><span class="panel-tag">Aggregated</span></div>
+  <div class="table-scroll">
+    <table class="table table-hover align-middle">
+      <thead class="table-success">
+        <tr><th>Age Band</th><th>Visits</th><th>Unique Patients</th><th>Share</th></tr>
+      </thead>
+      <tbody>
+        {% for r in agg.age %}
+        <tr>
+          <td><span class="pill">{{ r.age_band }}</span></td>
+          <td>{{ '{:,}'.format(r.visit_count) }}</td>
+          <td>{{ '{:,}'.format(r.unique_patients) }}</td>
+          <td>{{ r.share }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Export row -->
+<div class="panel">
+  <div class="panel-head"><h3>Export Aggregates (CSV)</h3><span class="panel-tag">Operational statistics</span></div>
+  <div class="d-flex flex-wrap gap-2">
+    {% for name, label in [('department_workload','Department Workload'),
+                           ('monthly_visits','Monthly Visits'),
+                           ('daily_visits','Daily Visits'),
+                           ('age_band','Age Band'),
+                           ('visit_type','Visit Type'),
+                           ('gender','Gender')] %}
+    <a class="btn btn-outline-success btn-sm"
+       href="{{ url_for('export_csv', name=name, date_from=date_from, date_to=date_to) }}">{{ label }} &#8681;</a>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const GREENS = ['#2e7d32', '#43a047', '#66bb6a', '#81c784', '#a5d6a7', '#c8e6c9', '#1b5e20', '#388e3c', '#26a69a', '#00897b'];
+const data = {{ chart | tojson }};
+
+function barChart(id, labels, values, color) {
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{
+      label: 'Visits', data: values,
+      backgroundColor: color || 'rgba(46,125,50,0.75)',
+      borderColor: '#2e7d32', borderWidth: 1, borderRadius: 6
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: '#5d6d5e' }, grid: { color: 'rgba(0,0,0,0.06)' } },
+        x: { ticks: { color: '#5d6d5e', maxRotation: 45 }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+barChart('deptChart', data.dept_labels, data.dept_values);
+barChart('monthChart', data.month_labels, data.month_values, 'rgba(67,160,71,0.85)');
+
+new Chart(document.getElementById('dailyChart'), {
+  type: 'line',
+  data: { labels: data.daily_labels, datasets: [{
+    label: 'Visits', data: data.daily_values,
+    borderColor: '#2e7d32', backgroundColor: 'rgba(46,125,50,0.12)',
+    fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2
+  }]},
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { color: '#5d6d5e' }, grid: { color: 'rgba(0,0,0,0.06)' } },
+      x: { ticks: { color: '#5d6d5e', maxTicksLimit: 12 }, grid: { display: false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('ageChart'), {
+  type: 'doughnut',
+  data: { labels: data.age_labels, datasets: [{
+    data: data.age_values, backgroundColor: GREENS,
+    borderColor: '#fff', borderWidth: 2
+  }]},
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'right', labels: { color: '#3d4d3e', boxWidth: 14 } } }
+  }
+});
+</script>
+{% endblock %}
